@@ -1,6 +1,6 @@
 # Clipboard Image Paste
 
-This private fork adds image paste support for EternalTerminal sessions used with
+This fork adds image paste support for EternalTerminal sessions used with
 terminal AI tools such as Claude Code or Codex running on a remote host.
 
 The feature is intentionally client/terminal scoped. It does not require a new
@@ -55,7 +55,7 @@ etserver protocol packet, and it does not require installing over the system
 
 ### 1. Build ฝั่ง Mac
 
-Clone private repo:
+Clone this repo:
 
 ```sh
 git clone git@github.com:lambogreny/EternalTerminal-image-paste.git

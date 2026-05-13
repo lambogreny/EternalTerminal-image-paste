@@ -1,5 +1,21 @@
 # Eternal Terminal
 
+## Clipboard Image Paste Fork
+
+This repository is an open source fork of
+[MisterTea/EternalTerminal](https://github.com/MisterTea/EternalTerminal) with
+one added feature: native clipboard image paste from a macOS ET client into a
+remote ET session.
+
+- Upstream base: `MisterTea/EternalTerminal@77eab5ec586e26106492f8403b18a35be0cb5de7`
+- Fork patch: `87ea062555ae1a9d97becdfdcfd8a4cb98a7feee`
+- Feature guide and install steps: [docs/clipboard-image-paste.md](docs/clipboard-image-paste.md)
+- What changed and how to sync upstream updates: [docs/upstream-sync.md](docs/upstream-sync.md)
+
+Use the guide above if you want image paste for Claude Code, Codex, tmux, or
+other remote terminal tools. The original EternalTerminal README continues
+below.
+
 Eternal Terminal is a remote shell that automatically reconnects without interrupting the session.
 
 Website: <https://mistertea.github.io/EternalTerminal/>.
