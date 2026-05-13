@@ -5,7 +5,10 @@
 
 namespace et {
 
+constexpr const char* kLocalClipboardPasteTrigger = "\x1b]777;et-paste\a";
+
 optional<ClipboardImagePayload> readLocalClipboardImage();
+optional<string> readLocalClipboardText();
 
 }  // namespace et
 

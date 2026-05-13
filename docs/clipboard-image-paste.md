@@ -40,7 +40,8 @@ etserver protocol packet, and it does not require installing over the system
 - Image files are left in `/tmp/et-clipboard-images-<uid>/` until removed by the
   user or normal `/tmp` cleanup.
 - Use `Ctrl+V` inside the ET session. `Cmd+V` is handled by the terminal app and
-  is not the native ET image-paste trigger.
+  is not visible to CLI programs unless your terminal emulator is configured to
+  send ET's local clipboard paste trigger.
 
 ## คู่มือติดตั้งให้เครื่องอื่น
 
@@ -256,6 +257,39 @@ ssh l1 'ls -lh /tmp/et-clipboard-images-$(id -u)/'
 ถ้าใช้ `ssh l1` หรือ `mosh l1` ตรงๆ จะส่งรูปไม่ได้ ต้องเข้าโดย `et-l1`
 หรือ wrapper ของ patched ET เท่านั้น
 
+### 6. ทำให้ `Cmd+V` ใช้ได้แบบ Native บน Ghostty
+
+บน macOS โปรแกรม CLI มองไม่เห็นปุ่ม `Command` โดยตรง เพราะ terminal emulator
+เป็นคนจับ `Cmd+V` ก่อน ถ้าอยากให้ `Cmd+V` เรียก image paste ของ ET ต้องให้
+terminal ส่ง trigger พิเศษนี้เข้ามาแทน:
+
+```text
+ESC ] 777 ; et-paste BEL
+```
+
+ใน Ghostty ใส่บรรทัดนี้ใน config:
+
+```text
+keybind = cmd+v=text:\x1b]777;et-paste\x07
+```
+
+จากนั้น reload Ghostty config ด้วย `Cmd+Shift+,` หรือเปิด Ghostty ใหม่
+
+เมื่อกด `Cmd+V` ใน patched ET:
+
+- ถ้า clipboard เป็นรูป: ET จะ upload รูปไป server แล้วใส่ remote path
+- ถ้า clipboard เป็นข้อความ: ET จะ paste ข้อความจาก macOS clipboard
+- ถ้าอยากปิด trigger นี้ในบาง session:
+
+```sh
+ET_DISABLE_LOCAL_CLIPBOARD_PASTE_TRIGGER=1 et-l1
+```
+
+ข้อควรระวัง: keybind นี้เป็น config ของ Ghostty ถ้าเปิดใช้ global ใน Ghostty
+แล้วกด `Cmd+V` ใน shell ธรรมดาที่ไม่ได้รัน patched ET อาจมี sequence แปลกๆ
+หลุดเข้า shell ได้ แนะนำให้ใช้กับ profile/window ที่ไว้เข้า ET เป็นหลัก หรือ
+ใช้ `Ctrl+V` ต่อไปถ้าไม่อยากเปลี่ยนพฤติกรรม paste ของ Ghostty ทั้งแอป
+
 ## Files Added Or Touched
 
 - `src/terminal/ClipboardImageFrame.hpp`
@@ -385,12 +419,28 @@ Plain `ssh l1` or `mosh l1` will not use this feature. The patched local `et`,
 patched remote `etterminal`, and running remote `etserver` must all be used
 together.
 
+For a native-feeling `Cmd+V` on Ghostty, add:
+
+```text
+keybind = cmd+v=text:\x1b]777;et-paste\x07
+```
+
+Reload Ghostty. In patched ET, `Cmd+V` will read the macOS clipboard directly:
+images become remote image paths, and text is pasted as text.
+
 ## Disable
 
 For one session, disable local image interception:
 
 ```sh
 ET_DISABLE_CLIPBOARD_IMAGE_PASTE=1 et-l1
+```
+
+For one session, disable the local clipboard paste trigger used by terminal
+keybinds such as Ghostty `Cmd+V`:
+
+```sh
+ET_DISABLE_LOCAL_CLIPBOARD_PASTE_TRIGGER=1 et-l1
 ```
 
 ## Troubleshooting

@@ -13,8 +13,9 @@ remote ET session.
 - What changed and how to sync upstream updates: [docs/upstream-sync.md](docs/upstream-sync.md)
 
 Use the guide above if you want image paste for Claude Code, Codex, tmux, or
-other remote terminal tools. The original EternalTerminal README continues
-below.
+other remote terminal tools. The fork also includes an optional Ghostty keybind
+for native-feeling `Cmd+V`; see the feature guide. The original EternalTerminal
+README continues below.
 
 Eternal Terminal is a remote shell that automatically reconnects without interrupting the session.
 

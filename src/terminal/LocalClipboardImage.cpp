@@ -61,6 +61,26 @@ if (tiff && tiff.length > 0) {
 $.exit(2);
 )JXA";
 
+const char* kReadClipboardTextScript = R"JXA(
+ObjC.import('AppKit');
+ObjC.import('Foundation');
+ObjC.import('stdlib');
+
+const pasteboard = $.NSPasteboard.generalPasteboard;
+const text = pasteboard.stringForType($.NSPasteboardTypeString);
+if (!text || text.length === 0) {
+  $.exit(2);
+}
+
+const data = text.dataUsingEncoding($.NSUTF8StringEncoding);
+if (!data || data.length === 0) {
+  $.exit(2);
+}
+
+$.NSFileHandle.fileHandleWithStandardOutput.writeData(data);
+$.exit(0);
+)JXA";
+
 string shellQuote(const string& value) {
   string quoted = "'";
   for (char c : value) {
@@ -105,6 +125,40 @@ optional<pair<string, string>> runClipboardImageScript() {
   return make_pair(output.substr(0, tab), output.substr(tab + 1));
 }
 
+optional<string> runClipboardTextScript() {
+  string command = "/usr/bin/osascript -l JavaScript -e " +
+                   shellQuote(kReadClipboardTextScript);
+  FILE* pipe = popen(command.c_str(), "r");
+  if (!pipe) {
+    return nullopt;
+  }
+
+  string output;
+  array<char, 4096> buffer;
+  while (true) {
+    size_t count = fread(buffer.data(), 1, buffer.size(), pipe);
+    if (count > 0) {
+      output.append(buffer.data(), count);
+    }
+    if (count < buffer.size()) {
+      if (feof(pipe)) {
+        break;
+      }
+      if (ferror(pipe)) {
+        pclose(pipe);
+        return nullopt;
+      }
+    }
+  }
+
+  int status = pclose(pipe);
+  if (status != 0 || output.empty()) {
+    return nullopt;
+  }
+
+  return output;
+}
+
 #endif
 
 }  // namespace
@@ -140,6 +194,19 @@ optional<ClipboardImagePayload> readLocalClipboardImage() {
   }
 
   return ClipboardImagePayload{extension, bytes};
+#else
+  return nullopt;
+#endif
+}
+
+optional<string> readLocalClipboardText() {
+#ifdef __APPLE__
+  optional<string> text = runClipboardTextScript();
+  if (!text || text->empty() || text->size() > kMaxClipboardImageBytes) {
+    return nullopt;
+  }
+
+  return text;
 #else
   return nullopt;
 #endif

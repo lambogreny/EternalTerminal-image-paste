@@ -26,6 +26,11 @@ Main behavior changes:
 - `etterminal` prints `ETCAPS:clipboard-image-paste` during SSH setup.
 - `et` detects that capability before enabling image paste frames.
 - macOS `et` reads image bytes from `NSPasteboard` through JXA/`osascript`.
+- macOS `et` also recognizes the local paste trigger
+  `ESC ] 777 ; et-paste BEL`, intended for terminal keybindings such as Ghostty
+  `Cmd+V`.
+- When that trigger is received, images are sent as image frames and text
+  clipboard content is pasted as text.
 - The image is sent through the existing encrypted `TERMINAL_BUFFER` path.
 - Remote `etterminal` decodes the private frame and writes the image to
   `/tmp/et-clipboard-images-<uid>/`.
@@ -134,6 +139,8 @@ Conflict resolution rule:
 - Keep `ETCAPS:clipboard-image-paste` output in `etterminal`.
 - Keep the capability gate in `SshSetupHandler`.
 - Keep `Ctrl+V` interception in `TerminalClient`.
+- Keep the local paste trigger handling in `TerminalClient` and
+  `LocalClipboardImage.*`.
 - Keep remote temp-file saving in `UserTerminalHandler`.
 
 After resolving conflicts:

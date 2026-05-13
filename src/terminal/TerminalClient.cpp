@@ -178,8 +178,40 @@ void TerminalClient::run(const string& command, const bool noexit) {
     const bool imagePasteEnabled =
         clipboardImagePasteSupported &&
         getenv("ET_DISABLE_CLIPBOARD_IMAGE_PASTE") == nullptr;
+    const bool localPasteTriggerEnabled =
+        getenv("ET_DISABLE_LOCAL_CLIPBOARD_PASTE_TRIGGER") == nullptr;
+    const string localPasteTrigger = kLocalClipboardPasteTrigger;
+
+    auto sendLocalClipboardPaste = [&]() {
+      if (imagePasteEnabled) {
+        optional<ClipboardImagePayload> image = readLocalClipboardImage();
+        if (image) {
+          sendTerminalBuffer(encodeClipboardImageFrame(*image));
+          return true;
+        }
+      }
+
+      optional<string> text = readLocalClipboardText();
+      if (text) {
+        sendTerminalBuffer(*text);
+        return true;
+      }
+
+      return false;
+    };
+
     string passthrough;
-    for (char c : input) {
+    for (size_t i = 0; i < input.size();) {
+      if (localPasteTriggerEnabled &&
+          input.compare(i, localPasteTrigger.size(), localPasteTrigger) == 0) {
+        sendTerminalBuffer(passthrough);
+        passthrough.clear();
+        sendLocalClipboardPaste();
+        i += localPasteTrigger.size();
+        continue;
+      }
+
+      char c = input[i++];
       if (imagePasteEnabled && c == 0x16) {
         optional<ClipboardImagePayload> image = readLocalClipboardImage();
         if (image) {
