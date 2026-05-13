@@ -1,5 +1,6 @@
 #include "TerminalClient.hpp"
 
+#include "LocalClipboardImage.hpp"
 #include "TelemetryService.hpp"
 #include "TunnelUtils.hpp"
 
@@ -12,10 +13,12 @@ TerminalClient::TerminalClient(
     const string& passkey, shared_ptr<Console> _console, bool jumphost,
     const string& tunnels, const string& reverseTunnels, bool forwardSshAgent,
     const string& identityAgent, int _keepaliveDuration,
-    const vector<pair<string, string>>& envVars)
+    const vector<pair<string, string>>& envVars,
+    bool _clipboardImagePasteSupported)
     : console(_console),
       shuttingDown(false),
-      keepaliveDuration(_keepaliveDuration) {
+      keepaliveDuration(_keepaliveDuration),
+      clipboardImagePasteSupported(_clipboardImagePasteSupported) {
   portForwardHandler = shared_ptr<PortForwardHandler>(
       new PortForwardHandler(_socketHandler, _pipeSocketHandler));
   InitialPayload payload;
@@ -159,16 +162,47 @@ void TerminalClient::run(const string& command, const bool noexit) {
   time_t keepaliveTime = time(NULL) + keepaliveDuration;
   bool waitingOnKeepalive = false;
 
-  if (command.length()) {
-    LOG(INFO) << "Got command: " << command;
+  auto sendTerminalBuffer = [&](const string& buffer) {
+    if (buffer.empty()) {
+      return;
+    }
     et::TerminalBuffer tb;
-    if (noexit)
-      tb.set_buffer(command + "\n");
-    else
-      tb.set_buffer(command + "; exit\n");
-
+    tb.set_buffer(buffer);
     connection->writePacket(
         Packet(TerminalPacketType::TERMINAL_BUFFER, protoToString(tb)));
+    keepaliveTime = time(NULL) + keepaliveDuration;
+  };
+
+  auto sendUserInput = [&](const string& input) {
+#ifdef __APPLE__
+    const bool imagePasteEnabled =
+        clipboardImagePasteSupported &&
+        getenv("ET_DISABLE_CLIPBOARD_IMAGE_PASTE") == nullptr;
+    string passthrough;
+    for (char c : input) {
+      if (imagePasteEnabled && c == 0x16) {
+        optional<ClipboardImagePayload> image = readLocalClipboardImage();
+        if (image) {
+          sendTerminalBuffer(passthrough);
+          passthrough.clear();
+          sendTerminalBuffer(encodeClipboardImageFrame(*image));
+          continue;
+        }
+      }
+      passthrough.push_back(c);
+    }
+    sendTerminalBuffer(passthrough);
+#else
+    sendTerminalBuffer(input);
+#endif
+  };
+
+  if (command.length()) {
+    LOG(INFO) << "Got command: " << command;
+    if (noexit)
+      sendTerminalBuffer(command + "\n");
+    else
+      sendTerminalBuffer(command + "; exit\n");
   }
 
   TerminalInfo lastTerminalInfo;
@@ -241,12 +275,7 @@ void TerminalClient::run(const string& command, const bool noexit) {
               }
             }
             if (s.length()) {
-              et::TerminalBuffer tb;
-              tb.set_buffer(s);
-
-              connection->writePacket(Packet(
-                  TerminalPacketType::TERMINAL_BUFFER, protoToString(tb)));
-              keepaliveTime = time(NULL) + keepaliveDuration;
+              sendUserInput(s);
             }
           }
 #else
@@ -257,12 +286,7 @@ void TerminalClient::run(const string& command, const bool noexit) {
               // VLOG(1) << "Sending byte: " << int(b) << " " << char(b) << " "
               // << connection->getWriter()->getSequenceNumber();
               string s(b, rc);
-              et::TerminalBuffer tb;
-              tb.set_buffer(s);
-
-              connection->writePacket(Packet(
-                  TerminalPacketType::TERMINAL_BUFFER, protoToString(tb)));
-              keepaliveTime = time(NULL) + keepaliveDuration;
+              sendUserInput(s);
             } else if (rc == 0) {
               LOG(INFO) << "Console EOF";
               break;
