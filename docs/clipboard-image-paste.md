@@ -271,6 +271,7 @@ ESC ] 777 ; et-paste BEL
 
 ```text
 keybind = cmd+v=text:\x1b]777;et-paste\x07
+keybind = paste=text:\x1b]777;et-paste\x07
 ```
 
 หรือใช้ helper script ใน repo นี้:
