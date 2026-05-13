@@ -28,9 +28,9 @@ backup_file="$config_file.bak-et-cmd-v-$(date +%Y%m%d-%H%M%S)"
 cp "$config_file" "$backup_file"
 
 {
-  echo
-  echo "# EternalTerminal image/text paste trigger for Cmd+V"
-  echo "$KEYBIND"
+  printf '\n'
+  printf '%s\n' "# EternalTerminal image/text paste trigger for Cmd+V"
+  printf '%s\n' "$KEYBIND"
 } >>"$config_file"
 
 echo "Enabled Ghostty Cmd+V keybind for patched EternalTerminal."
