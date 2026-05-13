@@ -43,6 +43,7 @@ Files added:
 ```text
 docs/clipboard-image-paste.md
 docs/upstream-sync.md
+scripts/enable-ghostty-et-cmd-v.sh
 src/terminal/ClipboardImageFrame.cpp
 src/terminal/ClipboardImageFrame.hpp
 src/terminal/LocalClipboardImage.cpp

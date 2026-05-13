@@ -273,6 +273,14 @@ ESC ] 777 ; et-paste BEL
 keybind = cmd+v=text:\x1b]777;et-paste\x07
 ```
 
+หรือใช้ helper script ใน repo นี้:
+
+```sh
+./scripts/enable-ghostty-et-cmd-v.sh
+```
+
+script นี้จะ backup Ghostty config ก่อน แล้วค่อยเติม keybind ให้
+
 จากนั้น reload Ghostty config ด้วย `Cmd+Shift+,` หรือเปิด Ghostty ใหม่
 
 เมื่อกด `Cmd+V` ใน patched ET:
